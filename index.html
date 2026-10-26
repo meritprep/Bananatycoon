@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Banana Tycoon</title>
+<style>
+:root{--bg:#2b2b2e;--panel:#38383c;--panel2:#444449;--line:#55555b;--text:#ececf0;--dim:#a6a6b0;--ban:#ffd23f;--ok:#5fd18a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e4e4e8;--panel:#f6f6f8;--panel2:#ddddE2;--line:#c4c4cc;--text:#222226;--dim:#666670;--ban:#e0a800;--ok:#1d9a54}}
+:root[data-theme="dark"]{--bg:#2b2b2e}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
+button{font:inherit;color:inherit}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.bar b{font-size:16px}
+.small{background:var(--panel2);color:var(--dim);border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:13px}
+.wrap{display:grid;grid-template-columns:1fr 360px;gap:12px;padding:12px;max-width:1000px;margin:0 auto}
+@media(max-width:720px){.wrap{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.ph{padding:8px 12px;background:var(--panel2);border-bottom:1px solid var(--line);font-weight:700;font-size:13px;color:var(--dim)}
+.tabs{display:flex;background:var(--panel2);border-bottom:1px solid var(--line)}
+.tab{flex:1;padding:10px;background:none;border:0;border-bottom:3px solid transparent;cursor:pointer;font-weight:700;color:var(--dim)}
+.tab[aria-selected="true"]{color:var(--ban);border-bottom-color:var(--ban);background:var(--panel)}
+.stage{display:flex;flex-direction:column;align-items:center;padding:20px 12px 24px;gap:8px;text-align:center}
+.total{font-size:44px;font-weight:800;color:var(--ban);line-height:1}
+.rate{color:var(--dim)}
+#pick{font-size:120px;line-height:1;background:none;border:0;cursor:pointer;margin:14px 0;user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .08s}
+#pick:active{transform:scale(.9) rotate(-6deg)}
+#pick:focus-visible,.up:focus-visible,.tab:focus-visible,.small:focus-visible,#ascend:focus-visible{outline:2px solid var(--ban);outline-offset:2px}
+.stats{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;color:var(--dim);font-size:13px}
+.up{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;width:100%;padding:12px;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer}
+.up:disabled{opacity:.45;cursor:not-allowed}
+.up:not(:disabled):hover{background:var(--panel2)}
+.ic{font-size:26px;text-align:center}
+.nm{font-weight:700}.ds{font-size:12px;color:var(--dim)}
+.cost{font-weight:700;color:var(--ban);white-space:nowrap}
+.own{font-size:12px;color:var(--ok)}
+.pager{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;color:var(--dim);font-size:13px}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+.ascbox{padding:18px 16px;display:flex;flex-direction:column;gap:12px}
+.ascbox h3{margin:0;color:var(--ban);font-size:20px}
+.ascbox p{margin:0;color:var(--dim)}
+#ascend{padding:14px;background:var(--ban);color:#2b2b2e;border:0;border-radius:4px;font-weight:800;cursor:pointer;font-size:16px}
+#ascend:disabled{opacity:.4;cursor:not-allowed}
+.float{position:fixed;pointer-events:none;color:var(--ban);font-weight:800;animation:fl .8s ease-out forwards}
+@keyframes fl{to{transform:translateY(-60px);opacity:0}}
+[hidden]{display:none!important}
+.boosts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.small:disabled{opacity:.45;cursor:not-allowed}
+.amt{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);align-items:center}
+.amt::before{content:"Buy:";color:var(--dim);font-size:13px;margin-right:4px}
+.amt button[aria-pressed="true"]{background:var(--ban);color:#2b2b2e;font-weight:700}
+.buff{min-height:20px;color:var(--ok);font-weight:700}
+.tc{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;align-items:center;z-index:20;pointer-events:none;width:90vw}
+.toast{background:var(--panel2);border:1px solid var(--ban);padding:8px 14px;border-radius:6px;font-weight:700;text-align:center}
+.gold-b{position:fixed;z-index:15;font-size:46px;background:none;border:0;cursor:pointer;filter:saturate(2.5) drop-shadow(0 0 14px #ffd23f);animation:bob 1s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-12px) rotate(8deg)}}
+@media(prefers-reduced-motion:reduce){.gold-b{animation:none}}
+@media(prefers-reduced-motion:reduce){.float{animation:none;opacity:0}#pick{transition:none}}
+</style>
+</head>
+<body>
+<div class="bar"><b>🍌 Banana Tycoon</b><button class="small" id="reset">Reset game</button></div>
+<div class="wrap">
+  <div class="panel">
+    <div class="ph">Plantation</div>
+    <div class="stage">
+      <div class="total" id="total">0</div>
+      <div>bananas</div>
+      <div class="rate" id="rate">0 per second</div>
+      <button id="pick" aria-label="Pick a banana">🍌</button>
+      <div class="stats"><span id="perclick"></span><span id="clicks"></span><span id="goldtop"></span></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-up" aria-selected="true">Upgrades</button>
+      <button class="tab" role="tab" id="t-asc" aria-selected="false">🌟 Ascend</button>
+    </div>
+    <div id="v-up">
+      <div id="ups"></div>
+      <div class="pager"><button class="small" id="prev">Previous</button><span id="pg"></span><button class="small" id="next">Next</button></div>
+    </div>
+    <div id="v-asc" class="ascbox" hidden>
+      <h3 id="gold"></h3>
+      <p id="goldinfo"></p>
+      <button id="ascend">Ascend</button>
+      <p>Each golden banana adds +25% to your clicks and your bananas per second. Ascending resets your bananas and upgrades, but you keep every golden banana forever.</p>
+    </div>
+  </div>
+</div>
+<script>
+// 25 click upgrades and 75 farm upgrades. Every 4th upgrade is a click upgrade.
+var CL="🧤 Better gloves;🥢 Banana tongs;🔪 Power peeler;⛏️ Banana drill;👆 Sticky fingers;🪝 Lucky hook;⚡ Turbo picker;🧲 Magnet hands;🔦 Laser cutter;🦀 Banana claw;👍 Quick thumbs;🔩 Steel grip;🥢 Mega tongs;🔥 Plasma peeler;🦾 Robot arm;🖐️ Hyper hands;🔮 Quantum claw;🌀 Gravity glove;✨ Cosmic fingers;💪 Titan grip;🌠 Star snatcher;🕳️ Void hands;⏱️ Time fingers;♾️ Infinity glove;🏆 Golden touch".split(";");
+var PL="🎃 Scarecrow;🧑‍🌾 Banana picker;🛒 Wheelbarrow;🐒 Trained monkey;💧 Irrigation;🌴 Banana grove;🏡 Greenhouse;🌱 Fertilizer;🚜 Tractor;🦍 Gorilla crew;🚚 Delivery truck;🏪 Banana stand;🧺 Farmers market;🛖 Jungle lodge;🏭 Banana factory;🚁 Drone fleet;🥤 Smoothie bar;🍞 Banana bread oven;🚂 Cargo train;🏦 Banana bank;✈️ Cargo plane;🏬 Banana mall;🌳 Rainforest reserve;🌋 Volcano farm;🤖 Robot pickers;🏝️ Banana island;🧠 AI foreman;📺 Banana TV;🏨 Banana resort;🧪 Banana lab;🤿 Submarine farm;☁️ Cloud orchard;🚢 Cargo ship;🏙️ Banana city;☀️ Solar farm;💎 Banana mine;🧬 Clone vat;🛫 Banana airline;🎓 Banana university;🏛️ Banana government;🛰️ Space station;🚀 Rocket farm;🌙 Moon farm;🔴 Mars colony;☄️ Asteroid grove;🚩 Banana nation;🔆 Dyson sphere;⚫ Black hole farm;⏳ Time machine;🌌 Wormhole depot;🪐 Nebula orchard;🏰 Banana empire;🌍 Planet harvester;👽 Alien deal;🌠 Galaxy plantation;🔨 Star forge;🧫 Antimatter grove;🚪 Dimension door;🪞 Parallel farms;🔱 Banana multiverse;♻️ Time loop;🌈 Reality bender;🐉 Banana dragon;😇 Banana angel;🙊 Cosmic monkey;📚 Banana oracle;🌰 Universe seed;🕳️ Banana singularity;💥 Big bang;🗝️ Eternal peel;🔟 Omega farm;🏖️ Banana paradise;👑 Banana god;🏁 Final grove".split(";");
+var UPS=[],ci=0,pi=0;
+for(var i=0;i<100;i++){
+ var isC=i%4===0,nm=(isC?CL[ci++]:PL[pi++])||("🍌 Banana wonder "+i),sp=nm.indexOf(" ");
+ var base=Math.round(15*Math.pow(1.9,i));
+ var u={id:"u"+i,ic:nm.slice(0,sp),nm:nm.slice(sp+1),base:base};
+ if(isC)u.click=Math.max(1,Math.round(base/12)); else u.ps=Math.max(0.5,Math.round(base/(50+3*i)*10)/10);
+ UPS.push(u);
+}
+var GROW=1.15; // every purchase makes the next one 15% more expensive
+var PER=5;     // upgrades shown per page
+var S={bananas:0,clicks:0,own:{},last:Date.now(),earned:0,gold:0,asc:0};
+try{var raw=localStorage.getItem("banana-tycoon");if(raw){var o=JSON.parse(raw);if(o&&o.own)S=o;}}catch(e){}
+S.earned=S.earned||0;S.gold=S.gold||0;S.asc=S.asc||0;
+var $=function(i){return document.getElementById(i)};
+function mult(){return (1+S.gold*0.25)*(1+(S.ach?Object.keys(S.ach).length:0)*0.02)*(Date.now()<buffEnd?7:1)}
+function pending(){return Math.floor(Math.sqrt(S.earned/1e6))}
+function cost(u){return Math.ceil(u.base*Math.pow(GROW,S.own[u.id]||0))}
+function perClick(){var t=1;UPS.forEach(function(u){if(u.click)t+=u.click*(S.own[u.id]||0)});return t*mult()}
+function perSec(){var t=0;UPS.forEach(function(u){if(u.ps)t+=u.ps*(S.own[u.id]||0)});return t*mult()}
+function fmt(n){
+ if(n<1000)return (Math.floor(n*10)/10).toString().replace(/\.0$/,"");
+ var s=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"],i=-1;
+ while(n>=1000&&i<s.length-1){n/=1000;i++}
+ return n.toFixed(2)+s[i];
+}
+// Five fixed rows. Changing pages just swaps which upgrade each row points at.
+var page=0,rows=[],PAGES=Math.ceil(UPS.length/PER);
+for(var k=0;k<PER;k++){
+ var b=document.createElement("button");b.className="up";
+ b.innerHTML='<span class="ic"></span><span><span class="nm"></span><br><span class="ds"></span> <span class="own"></span></span><span class="cost"></span>';
+ (function(b){b.onclick=function(){buy(b.u)}})(b);
+ $("ups").appendChild(b);rows.push(b);
+}
+function setPage(p){
+ page=Math.max(0,Math.min(PAGES-1,p));
+ rows.forEach(function(b,k){
+  var u=UPS[page*PER+k];b.u=u;
+  b.querySelector(".ic").textContent=u.ic;
+  b.querySelector(".nm").textContent=u.nm;
+  b.querySelector(".ds").textContent=u.click?"+"+fmt(u.click)+" per click":"+"+fmt(u.ps)+" per second";
+ });
+ $("pg").textContent="Page "+(page+1)+" of "+PAGES;
+ $("prev").disabled=page===0;$("next").disabled=page===PAGES-1;
+ draw();
+}
+$("prev").onclick=function(){setPage(page-1)};
+$("next").onclick=function(){setPage(page+1)};
+function buy(u){
+ var c=cost(u);if(S.bananas<c)return;
+ S.bananas-=c;S.own[u.id]=(S.own[u.id]||0)+1;draw();save();
+}
+function draw(){
+ $("total").textContent=fmt(S.bananas);
+ $("rate").textContent=fmt(perSec())+" per second";
+ $("perclick").textContent=fmt(perClick())+" per click";
+ $("clicks").textContent=S.clicks+" clicks";
+ $("goldtop").textContent=S.gold?"🌟 "+S.gold+" golden":"";
+ rows.forEach(function(b){
+  var u=b.u,c=cost(u);
+  b.disabled=S.bananas<c;
+  b.querySelector(".cost").textContent="🍌 "+fmt(c);
+  b.querySelector(".own").textContent=S.own[u.id]?"· owned: "+S.own[u.id]:"";
+ });
+ var p=pending();
+ $("gold").textContent="🌟 Golden bananas: "+S.gold+" (+"+(S.gold*25)+"%)";
+ $("goldinfo").textContent="Ascended "+S.asc+" times. This run: "+fmt(S.earned)+" bananas earned.";
+ $("ascend").textContent=p>=1?"Ascend now: +"+p+" golden bananas":"Ascend (earn 1 million bananas first)";
+ $("ascend").disabled=p<1;
+}
+function tab(a){
+ $("v-up").hidden=!a;$("v-asc").hidden=a;
+ $("t-up").setAttribute("aria-selected",a);$("t-asc").setAttribute("aria-selected",!a);
+}
+$("t-up").onclick=function(){tab(true)};
+$("t-asc").onclick=function(){tab(false)};
+function save(){S.last=Date.now();try{localStorage.setItem("banana-tycoon",JSON.stringify(S))}catch(e){}}
+$("pick").addEventListener("click",function(e){
+ var n=perClick(),crit=Math.random()<0.05;if(crit)n*=10;S.bananas+=n;S.earned+=n;S.clicks++;
+ var f=document.createElement("div");f.className="float";f.textContent=(crit?"CRIT! +":"+")+fmt(n);
+ f.style.left=(e.clientX||innerWidth/2)-8+"px";f.style.top=(e.clientY||innerHeight/2)-20+"px";
+ document.body.appendChild(f);setTimeout(function(){f.remove()},800);
+ draw();
+});
+$("reset").onclick=function(){
+ if(!confirm("Erase all progress, including golden bananas, and start over?"))return;
+ S={bananas:0,clicks:0,own:{},last:Date.now(),earned:0,gold:0,asc:0};save();draw();
+};
+$("ascend").onclick=function(){
+ var p=pending();if(p<1)return;
+ if(!confirm("Ascend for +"+p+" golden bananas? Your bananas and upgrades will reset."))return;
+ S.gold+=p;S.asc++;S.bananas=0;S.earned=0;S.clicks=0;S.own={};save();draw();
+};
+// Earn offline bananas (up to 1 hour) for the time you were away.
+(function(){var away=Math.min((Date.now()-(S.last||Date.now()))/1000,3600);window.AWAY=away})();
+// ---- extra features: buy amounts, crit clicks, awards, golden bananas ----
+var buffEnd=0,AMT=1;
+S.ach=S.ach||{};S.caught=S.caught||0;
+function plan(u,n){var own=S.own[u.id]||0,tot=0,k=0;
+ while(k<n&&k<1000){var c=Math.ceil(u.base*Math.pow(GROW,own+k));if(tot+c>S.bananas)break;tot+=c;k++}
+ return [k,tot]}
+function buy(u){var p=plan(u,AMT);if(!p[0])return;S.bananas-=p[1];S.own[u.id]=(S.own[u.id]||0)+p[0];draw();save()}
+var amt=document.createElement("div");amt.className="amt";
+[[1,"x1"],[10,"x10"],[1e9,"Max"]].forEach(function(a){
+ var b=document.createElement("button");b.className="small";b.textContent=a[1];b.setAttribute("aria-pressed",a[0]===1);
+ b.onclick=function(){AMT=a[0];Array.prototype.forEach.call(amt.children,function(x){x.setAttribute("aria-pressed",x===b)});draw()};
+ amt.appendChild(b)});
+$("ups").before(amt);
+var bf=document.createElement("div");bf.className="buff";$("rate").after(bf);
+var tc=document.createElement("div");tc.className="tc";document.body.appendChild(tc);
+function toast(t){var d=document.createElement("div");d.className="toast";d.textContent=t;tc.appendChild(d);setTimeout(function(){d.remove()},3500)}
+function owned(){var t=0;for(var k in S.own)t+=S.own[k];return t}
+var ACH=[
+["First pick","Pick a banana",function(){return S.clicks>=1}],
+["Busy hands","Click 100 times",function(){return S.clicks>=100}],
+["Click machine","Click 1,000 times",function(){return S.clicks>=1000}],
+["Small farm","Own 10 upgrades",function(){return owned()>=10}],
+["Big farm","Own 50 upgrades",function(){return owned()>=50}],
+["Banana baron","Own 200 upgrades",function(){return owned()>=200}],
+["Thousandaire","Earn 1 thousand bananas in a run",function(){return S.earned>=1e3}],
+["Millionaire","Earn 1 million bananas in a run",function(){return S.earned>=1e6}],
+["Billionaire","Earn 1 billion bananas in a run",function(){return S.earned>=1e9}],
+["Trillionaire","Earn 1 trillion bananas in a run",function(){return S.earned>=1e12}],
+["Up and away","Ascend once",function(){return S.asc>=1}],
+["Reborn","Ascend 5 times",function(){return S.asc>=5}],
+["Lucky catch","Catch a golden banana",function(){return S.caught>=1}],
+["Golden hunter","Catch 10 golden bananas",function(){return S.caught>=10}],
+["Speed demon","Make 1 million bananas per second",function(){return perSec()>=1e6}]];
+var av=document.createElement("div");av.id="v-ach";av.hidden=true;av.className="ascbox";$("v-asc").after(av);
+var tb=document.createElement("button");tb.className="tab";tb.id="t-ach";tb.setAttribute("role","tab");tb.setAttribute("aria-selected","false");tb.textContent="🏆 Awards";$("t-asc").after(tb);
+function renderAch(){var n=Object.keys(S.ach).length;
+ av.innerHTML="<h3>🏆 "+n+" of "+ACH.length+" awards (+"+n*2+"%)</h3><p>Each award adds +2% to everything and is kept when you ascend.</p>"+ACH.map(function(a,i){return "<p>"+(S.ach[i]?"✅ <b>"+a[0]+"</b>: ":"🔒 "+a[0]+": ")+a[1]+"</p>"}).join("")}
+function showTab(n){["up","asc","ach"].forEach(function(k){$("v-"+k).hidden=k!==n;$("t-"+k).setAttribute("aria-selected",k===n)});if(n==="ach")renderAch()}
+$("t-up").onclick=function(){showTab("up")};$("t-asc").onclick=function(){showTab("asc")};tb.onclick=function(){showTab("ach")};
+var baseDraw=draw;
+draw=function(){
+ baseDraw();
+ rows.forEach(function(b){var p=plan(b.u,AMT);b.querySelector(".cost").textContent="🍌 "+fmt(p[0]?p[1]:cost(b.u))+(p[0]>1?" (x"+p[0]+")":"")});
+ var left=Math.ceil((buffEnd-Date.now())/1000);
+ bf.textContent=left>0?"⚡ Banana frenzy x7: "+left+"s":"";
+ ACH.forEach(function(a,i){if(!S.ach[i]&&a[2]()){S.ach[i]=1;toast("🏆 Award unlocked: "+a[0]+" (+2%)");save();if(!av.hidden)renderAch()}});
+};
+// A golden banana appears every 40 to 90 seconds and stays for 12 seconds. Click it!
+function spawnGold(){
+ var g=document.createElement("button");g.className="gold-b";g.textContent="🍌✨";g.setAttribute("aria-label","Golden banana, click it");
+ g.style.left=(8+Math.random()*80)+"vw";g.style.top=(15+Math.random()*65)+"vh";
+ g.onclick=function(){
+  S.caught++;g.remove();
+  if(Math.random()<0.5){buffEnd=Date.now()+30000;toast("⚡ Banana frenzy! Everything x7 for 30 seconds")}
+  else{var gain=Math.max(perSec()*900,50*perClick());S.bananas+=gain;S.earned+=gain;toast("🍀 Lucky! +"+fmt(gain)+" bananas")}
+  draw();save()};
+ document.body.appendChild(g);setTimeout(function(){g.remove()},12000);
+}
+function schedule(d){setTimeout(function(){spawnGold();schedule(40000+Math.random()*50000)},d)}
+schedule(15000);
+// ---- round 2: milestones, combo, boosts, perks, sound ----
+S.seeds=S.seeds||0;S.perks=S.perks||{};
+function P(k){return S.perks&&S.perks[k]}
+var MILES=[10,25,50,100,150],combo=0,lastClick=0,clickEnd=0,clickX=5,cd={f:0,h:0},snd=true,AC=null;
+function msFor(u){var n=S.own[u.id]||0,m=1;MILES.forEach(function(t){if(n>=t)m*=2});return m}
+function comboMult(){return 1+Math.min(combo,P("combo")?100:50)/25}
+function perSec(){var t=0;UPS.forEach(function(u){if(u.ps)t+=u.ps*(S.own[u.id]||0)*msFor(u)});return t*mult()}
+function perClick(){var t=1;UPS.forEach(function(u){if(u.click)t+=u.click*(S.own[u.id]||0)*msFor(u)});
+ return (t*mult()+perSec()*0.02)*comboMult()*(P("clk")?2:1)*(Date.now()<clickEnd?clickX:1)}
+function disc(){return P("disc")?0.9:1}
+function cost(u){return Math.ceil(u.base*Math.pow(GROW,S.own[u.id]||0)*disc())}
+function plan(u,n){var own=S.own[u.id]||0,tot=0,k=0;
+ while(k<n&&k<1000){var c=Math.ceil(u.base*Math.pow(GROW,own+k)*disc());if(tot+c>S.bananas)break;tot+=c;k++}
+ return [k,tot]}
+function beep(f,d){if(!snd)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=0.04;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+function buy(u){var p=plan(u,AMT);if(!p[0])return;S.bananas-=p[1];S.own[u.id]=(S.own[u.id]||0)+p[0];beep(600,.12);draw();save()}
+var sb=document.createElement("button");sb.className="small";sb.textContent="🔊 Sound on";
+sb.onclick=function(){snd=!snd;sb.textContent=snd?"🔊 Sound on":"🔇 Sound off"};$("reset").before(sb);
+// Combo: click fast to build a bonus, up to x3 (x5 with the Combo king perk)
+$("pick").addEventListener("click",function(){var now=Date.now();combo=(now-lastClick<1200)?combo+1:1;lastClick=now;beep(300+Math.min(combo,30)*15,.07)},true);
+var cb=document.createElement("div");cb.className="buff";bf.after(cb);
+// Boosts with cooldowns
+var boosts=document.createElement("div");boosts.className="boosts";document.querySelector(".stats").after(boosts);
+var b1=document.createElement("button"),b2=document.createElement("button");b1.className=b2.className="small";
+b1.title="Clicks are worth x5 for 20 seconds. Ready again after 60 seconds.";b2.title="Get 5 minutes of bananas right now. Ready again after 90 seconds.";
+b1.onclick=function(){var n=Date.now();if(n<cd.f)return;cd.f=n+60000;clickEnd=n+(P("fren")?40000:20000);clickX=5;beep(800,.2);toast("🔥 Click frenzy! Clicks are worth x5")};
+b2.onclick=function(){if(Date.now()<cd.h)return;cd.h=Date.now()+90000;var g=Math.max(perSec()*300,perClick()*20);S.bananas+=g;S.earned+=g;beep(500,.25);toast("🌾 Harvest! +"+fmt(g)+" bananas");draw();save()};
+boosts.appendChild(b1);boosts.appendChild(b2);
+// Perks bought with seeds (you get seeds when you ascend)
+var PERKS=[["clk","Sticky gloves","Clicks are worth 2x",3],["head","Head start","Start each run with 5,000 bananas",4],["luck","Golden luck","Golden bananas show up twice as often",5],["combo","Combo king","Combo bonus goes up to x5",6],["disc","Bulk discount","All upgrades cost 10% less",8],["fren","Frenzy master","Frenzies and storms last twice as long",10]];
+var pk=document.createElement("div");pk.id="perks";$("v-asc").appendChild(pk);
+function renderPerks(){pk.innerHTML="<h3>🌱 Seeds: "+S.seeds+"</h3><p>Ascending also gives you seeds, the same number as golden bananas. Spend them on perks you keep forever.</p>";
+ PERKS.forEach(function(k){var b=document.createElement("button"),has=P(k[0]);b.className="up";
+  b.innerHTML='<span class="ic">'+(has?"✅":"🌱")+'</span><span><span class="nm">'+k[1]+'</span><br><span class="ds">'+k[2]+'</span></span><span class="cost">'+(has?"owned":k[3]+" seeds")+'</span>';
+  b.disabled=has||S.seeds<k[3];
+  b.onclick=function(){S.seeds-=k[3];S.perks[k[0]]=1;beep(700,.15);save();renderPerks()};pk.appendChild(b)})}
+function showTab(n){["up","asc","ach"].forEach(function(k){$("v-"+k).hidden=k!==n;$("t-"+k).setAttribute("aria-selected",k===n)});if(n==="ach")renderAch();if(n==="asc")renderPerks()}
+$("ascend").onclick=function(){var p=pending();if(p<1)return;
+ if(!confirm("Ascend for +"+p+" golden bananas and "+p+" seeds? Your bananas and upgrades will reset."))return;
+ S.gold+=p;S.seeds+=p;S.asc++;S.bananas=P("head")?5000:0;S.earned=0;S.clicks=0;S.own={};beep(900,.3);save();draw();renderPerks()};
+ACH.push(["On fire","Reach a 50-click combo",function(){return combo>=50}],
+["Seed sower","Buy a perk",function(){return Object.keys(S.perks).length>=1}],
+["Collector","Own 100 of one upgrade",function(){return UPS.some(function(u){return (S.own[u.id]||0)>=100})}]);
+var draw2=draw;
+draw=function(){
+ draw2();
+ var now=Date.now();if(now-lastClick>1200)combo=0;
+ cb.textContent=combo>=2?"🔥 Combo x"+comboMult().toFixed(1):"";
+ rows.forEach(function(b){var u=b.u,n=S.own[u.id]||0,nx=MILES.filter(function(t){return t>n})[0];
+  b.querySelector(".own").textContent=(n?"· owned: "+n:"")+(nx?" · doubles at "+nx:"")});
+ b1.disabled=now<cd.f;b2.disabled=now<cd.h;
+ b1.textContent=now<cd.f?"🔥 Click frenzy ("+Math.ceil((cd.f-now)/1000)+"s)":"🔥 Click frenzy";
+ b2.textContent=now<cd.h?"🌾 Harvest ("+Math.ceil((cd.h-now)/1000)+"s)":"🌾 Harvest";
+};
+// Golden bananas now have three prizes
+function spawnGold(){
+ var g=document.createElement("button");g.className="gold-b";g.textContent="🍌✨";g.setAttribute("aria-label","Golden banana, click it");
+ g.style.left=(8+Math.random()*80)+"vw";g.style.top=(15+Math.random()*65)+"vh";
+ g.onclick=function(){
+  S.caught++;g.remove();beep(1000,.25);
+  var r=Math.random(),now=Date.now(),m=P("fren")?2:1;
+  if(r<0.4){buffEnd=now+30000*m;toast("⚡ Banana frenzy! Everything x7")}
+  else if(r<0.75){var gain=Math.max(perSec()*900,50*perClick());S.bananas+=gain;S.earned+=gain;toast("🍀 Lucky! +"+fmt(gain)+" bananas")}
+  else{clickEnd=now+15000*m;clickX=20;toast("🔥 Click storm! Clicks are worth x20")}
+  draw();save()};
+ document.body.appendChild(g);setTimeout(function(){g.remove()},12000);
+}
+function schedule(d){setTimeout(function(){spawnGold();schedule((40000+Math.random()*50000)/(P("luck")?2:1))},d)}
+// ---- round 3: bug fixes ----
+function fix(){S.own=S.own||{};S.ach=S.ach||{};S.perks=S.perks||{};["bananas","clicks","earned","gold","asc","seeds","caught"].forEach(function(k){S[k]=S[k]||0})}
+fix();
+// Offline earnings are applied here, after everything they depend on exists.
+if(window.AWAY>5){var og=perSec()*window.AWAY;if(og>0){S.bananas+=og;S.earned+=og;toast("🌙 Welcome back! You earned "+fmt(og)+" bananas while away")}}
+// Google Sites blocks pop-up confirm boxes, so Ascend and Reset ask you to click twice instead.
+var ascT=0,rsT=0;
+$("ascend").onclick=function(){var p=pending();if(p<1)return;
+ if(Date.now()>ascT){ascT=Date.now()+4000;draw();return}
+ ascT=0;S.gold+=p;S.seeds+=p;S.asc++;S.bananas=P("head")?5000:0;S.earned=0;S.clicks=0;S.own={};beep(900,.3);save();draw();renderPerks()};
+$("reset").onclick=function(){var r=$("reset");
+ if(Date.now()<rsT){rsT=0;r.textContent="Reset game";S={bananas:0,clicks:0,own:{},last:Date.now(),earned:0,gold:0,asc:0,seeds:0,perks:{},ach:{},caught:0};fix();combo=0;save();setPage(0);return}
+ rsT=Date.now()+4000;r.textContent="Click again to erase all";setTimeout(function(){if(Date.now()>=rsT)r.textContent="Reset game"},4100)};
+var draw3=draw;
+draw=function(){fix();draw3();if(Date.now()<ascT)$("ascend").textContent="Click again to confirm (resets your farm)"};
+// Handy button for jumping to the newest upgrade you can afford
+var jb=document.createElement("button");jb.className="small";jb.textContent="Newest";
+jb.title="Jump to the newest upgrade you can afford";
+jb.onclick=function(){var k=0;UPS.forEach(function(u,i){if(plan(u,1)[0])k=i});setPage(Math.floor(k/PER))};
+$("pg").before(jb);
+setPage(0);
+var prev=Date.now();
+setInterval(function(){
+ var now=Date.now(),dt=(now-prev)/1000;prev=now;
+ var g=perSec()*dt;S.bananas+=g;S.earned+=g;draw();
+},100);
+setInterval(save,5000);
+</script>
+</body>
+</html>
